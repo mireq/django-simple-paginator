@@ -10,6 +10,16 @@ Install
 Usage
 -----
 
+Settings
+^^^^^^^^
+
+.. code:: python
+
+	INSTALLED_APPS = (
+		// ...
+		'django_simple_paginator',
+	)
+
 View
 ^^^^
 
