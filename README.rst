@@ -5,9 +5,7 @@ Simple pagination for django
 Install
 -------
 
-```
-pip install https://github.com/mireq/django-simple-paginator.git
-```
+`pip install https://github.com/mireq/django-simple-paginator.git`
 
 Usage
 -----
@@ -16,6 +14,7 @@ View
 ^^^^
 
 .. code:: python
+
 	// views.py
 
 	from django_simple_paginator import Paginator
@@ -31,6 +30,7 @@ Template
 ^^^^^^^^
 
 .. code:: html
+
 	<!-- object_list.html -->
 	{% load paginator_tags %}
 
