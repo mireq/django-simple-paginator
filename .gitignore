@@ -1,0 +1,3 @@
+example_project/db.sqlite3
+example_project/media/*
+!example_project/media/.keep_me
