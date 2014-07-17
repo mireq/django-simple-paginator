@@ -16,7 +16,7 @@ Settings
 .. code:: python
 
 	INSTALLED_APPS = (
-		// ...
+		# ...
 		'django_simple_paginator',
 	)
 
@@ -25,16 +25,16 @@ View
 
 .. code:: python
 
-	// views.py
+	# views.py
 
 	from django_simple_paginator import Paginator
 
-	// ...
+	# ...
 
 	class ObjectList(ListView):
 		paginator_class = Paginator
 		paginate_by = 10
-		// model = ...
+		# model = ...
 
 Template
 ^^^^^^^^
@@ -57,5 +57,5 @@ URLs
 
 .. code:: python
 
-	// urls.py
+	# urls.py
 	url(r'^object-list/(?:(?P<page>\d+)/)?$', ObjectList.as_view(), name='object_list'),
