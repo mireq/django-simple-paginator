@@ -1,20 +1,25 @@
 # -*- coding: utf-8 -*-
 from django import template
 from django.core.urlresolvers import reverse, NoReverseMatch
+from django.template.loader import render_to_string
 
 
 register = template.Library()
 
 
-@register.inclusion_tag("paginator/paginator.html", takes_context=True)
+@register.simple_tag(takes_context=True)
 def pagination(context, page_obj=None, page_kwarg='page'):
 	page_obj = page_obj or context['page_obj']
-	return {
+	context.push()
+	context.update({
 		'page_obj': page_obj,
 		'page_kwarg': page_kwarg,
 		'resolver_match': context['request'].resolver_match,
 		'request': context['request'],
-	}
+	})
+	rendered = render_to_string('paginator/paginator.html', context)
+	context.pop()
+	return rendered
 
 
 @register.simple_tag(takes_context=True)
