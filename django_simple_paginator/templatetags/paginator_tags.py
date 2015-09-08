@@ -4,6 +4,7 @@ from copy import copy
 from django import template
 from django.core.urlresolvers import reverse, NoReverseMatch
 from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 
 register = template.Library()
@@ -12,19 +13,23 @@ register = template.Library()
 def pagination_ctx(context, page_obj=None, page_kwarg='page'):
 	page_obj = page_obj or context['page_obj']
 	inner_context = copy(context)
-	inner_context.update({
+	ctx_update = {
 		'page_obj': page_obj,
 		'page_kwarg': page_kwarg,
 		'resolver_match': context['request'].resolver_match,
 		'request': context['request'],
-	})
+	}
+	try:
+		inner_context.update(ctx_update)
+	except AttributeError:
+		inner_context.vars.update(ctx_update)
 	return inner_context
 
 
 @register.simple_tag(takes_context=True)
 def pagination(context, page_obj=None, page_kwarg='page'):
 	rendered = render_to_string('paginator/paginator.html', pagination_ctx(context, page_obj, page_kwarg))
-	return rendered
+	return mark_safe(rendered)
 
 
 @register.simple_tag(takes_context=True)
@@ -43,3 +48,12 @@ def pager_url(context, page_num):
 		base_url = reverse(resolver_match.view_name, args=resolver_match.args, kwargs=resolver_match.kwargs)
 		return base_url + '?' + get.urlencode()
 
+
+try:
+	from django_jinja import library
+	from jinja2 import contextfunction
+
+	library.global_function(contextfunction(pagination))
+	library.global_function(contextfunction(pager_url))
+except ImprotError:
+	pass
