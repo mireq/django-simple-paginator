@@ -38,6 +38,13 @@ def pager_url(context, page_num):
 	resolver_match = context['resolver_match']
 	page_kwarg = context['page_kwarg']
 	kwargs = resolver_match.kwargs.copy()
+	kwargs.pop(page_kwarg, None)
+	if page_num == 1:
+		try:
+			url_args = '?' + request.GET.urlencode() if request.GET else ''
+			return reverse(resolver_match.view_name, args=resolver_match.args, kwargs=kwargs) + url_args
+		except NoReverseMatch:
+			pass
 	kwargs[page_kwarg] = page_num
 	try:
 		url_args = '?' + request.GET.urlencode() if request.GET else ''
