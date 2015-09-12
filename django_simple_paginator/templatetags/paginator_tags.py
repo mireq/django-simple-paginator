@@ -37,7 +37,7 @@ def pager_url(context, page_num):
 	request = context['request']
 	resolver_match = context['resolver_match']
 	page_kwarg = context['page_kwarg']
-	kwargs = resolver_match.kwargs.copy()
+	kwargs = {k: v for k, v in resolver_match.kwargs.iteritems() if v is not None}
 	try:
 		url_args = '?' + request.GET.urlencode() if request.GET else ''
 		full_url = reverse(resolver_match.view_name, args=resolver_match.args, kwargs=kwargs) + url_args
