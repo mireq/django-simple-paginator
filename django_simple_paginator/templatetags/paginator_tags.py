@@ -63,5 +63,5 @@ try:
 
 	library.global_function(contextfunction(pagination))
 	library.global_function(contextfunction(pager_url))
-except ImprotError:
+except ImportError:
 	pass
