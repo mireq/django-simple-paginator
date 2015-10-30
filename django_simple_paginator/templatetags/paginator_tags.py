@@ -27,8 +27,8 @@ def pagination_ctx(context, page_obj=None, page_kwarg='page'):
 
 
 @register.simple_tag(takes_context=True)
-def pagination(context, page_obj=None, page_kwarg='page'):
-	rendered = render_to_string('paginator/paginator.html', pagination_ctx(context, page_obj, page_kwarg))
+def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html'):
+	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg))
 	return mark_safe(rendered)
 
 
