@@ -27,12 +27,7 @@ View
 
 	# views.py
 
-	from django_simple_paginator import Paginator
-
-	# ...
-
 	class ObjectList(ListView):
-		paginator_class = Paginator
 		paginate_by = 10
 		# model = ...
 
