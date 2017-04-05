@@ -3,14 +3,16 @@
 {% load paginator_tags %}
 
 {% block site_title %}Default paginator{% endblock %}
+{% block head_title %}Default paginator{% endblock %}
 
 {% block content %}
 	<div class="paginated-list">
+		<div class="pagination top">{% pagination %}</div>
 		<ul class="items">
 			{% for object in object_list %}
 				<li>{{ object }}</li>
 			{% endfor %}
 		</ul>
-		{% pagination %}
+		<div class="pagination bottom">{% pagination %}</div>
 	</div>
 {% endblock %}

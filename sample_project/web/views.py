@@ -13,7 +13,7 @@ for i in range(500):
 
 
 class SampleListView(ListView):
-	paginate_by = 20
+	paginate_by = 10
 
 	def get_queryset(self):
 		return LIST_DATA

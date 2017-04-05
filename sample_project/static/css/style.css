@@ -1,5 +1,5 @@
 body, html {
-	background: white;
+	background: #fafafa;
 	color: black;
 	font-size: 16px;
 	margin: 0;
@@ -20,8 +20,9 @@ h1, h2, h3, h4, h5, h6 {
 h1 {
 	font-size: 32px;
 	border-bottom: 1px solid #eee;
-	margin: 0 -16px 32px -16px;
-	padding: 12px 16px 16px 16px;
+	margin: -8px -16px 32px -16px;
+	padding: 16px;
+	background: #fff;
 }
 
 h2 {
@@ -39,4 +40,79 @@ h1, h2, h3, a {
 p {
 	color: #444;
 	font-size: 16px;
+}
+
+.paginated-list {
+	display: block;
+	background: #fff;
+	box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.2);
+}
+
+.paginated-list .items {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.paginated-list .items li {
+	padding: 8px 16px;
+	border-bottom: 1px solid #fafafa;
+}
+
+.pagination {
+	padding: 8px 16px;
+	margin: 0;
+	background: #fdfdfd;
+	overflow: auto;
+}
+
+.pagination.top {
+	border-bottom: 1px solid #eee;
+}
+
+.pagination.bottom {
+	border-top: 1px solid #eee;
+	margin-top: -1px;
+}
+
+.pagination ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	float: right;
+	border: 1px solid #eee;
+}
+
+.pagination ul li {
+	display: inline-block;
+	background: white;
+	float: left;
+	border-left: 1px solid #eee;
+	margin: 0 0 0 -1px;
+	padding: 0;
+}
+
+/*
+.pagination ul li.dots {
+	border-left: none;
+}
+
+.pagination ul li.dots + li {
+	border-left: none;
+}
+*/
+
+.pagination ul li a {
+	text-decoration: none;
+	display: block;
+	padding: 4px 8px;
+}
+
+.pagination ul li.disabled a {
+	color: #ccc;
+	cursor: default;
+}
+
+.pagination ul li.active a {
+	font-weight: bold;
 }
