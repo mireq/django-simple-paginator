@@ -1,0 +1,42 @@
+body, html {
+	background: white;
+	color: black;
+	font-size: 16px;
+	margin: 0;
+	padding: 0;
+	font-family: sans-serif;
+}
+
+.wrap {
+	padding: 8px 16px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-weight: 100;
+	margin: 0;
+	padding: 8px 0;
+}
+
+h1 {
+	font-size: 32px;
+	border-bottom: 1px solid #eee;
+	margin: 0 -16px 32px -16px;
+	padding: 12px 16px 16px 16px;
+}
+
+h2 {
+	font-size: 26px;
+}
+
+h3 {
+	font-size: 22px;
+}
+
+h1, h2, h3, a {
+	color: #6b8fc7;
+}
+
+p {
+	color: #444;
+	font-size: 16px;
+}
