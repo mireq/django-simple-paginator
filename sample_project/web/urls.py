@@ -8,5 +8,5 @@ from . import views
 
 urlpatterns = [
 	url(r'^$', views.home_view, name='home'),
-	url(r'^default/$', views.default_paginator_view, name='default_paginator'),
+	url(r'^default/(?:(?P<page>\d+)/)?$', views.default_paginator_view, name='default_paginator'),
 ]
