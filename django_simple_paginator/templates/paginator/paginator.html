@@ -1,6 +1,5 @@
 {% load paginator_tags %}
-{% if page_obj.has_next or page_obj.has_previous %}
-<ul>
+{% if page_obj.has_next or page_obj.has_previous %} <ul>
 	<li class="prev{% if not page_obj.has_previous %} disabled{% endif %}"><a href="{% if page_obj.has_previous %}{% pager_url page_obj.previous_page_number %}{% else %}#{% endif %}">&lt;</a></li>
 
 	{% for page in page_obj.page_range %}
