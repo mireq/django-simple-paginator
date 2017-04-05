@@ -102,6 +102,10 @@ p {
 }
 */
 
+.pagination ul li.count {
+	padding: 4px 8px;
+}
+
 .pagination ul li a {
 	text-decoration: none;
 	display: block;

@@ -22,3 +22,4 @@ class SampleListView(ListView):
 home_view = TemplateView.as_view(template_name='home.html')
 default_paginator_view = SampleListView.as_view(template_name='default.html')
 large_paginator_view = SampleListView.as_view(template_name='large.html')
+custom_template_paginator_view = SampleListView.as_view(template_name='custom_template.html')

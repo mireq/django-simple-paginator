@@ -1,0 +1,10 @@
+{% extends "default.html" %}
+
+{% load paginator_tags %}
+
+{% block site_title %}Custom template paginator{% endblock %}
+{% block head_title %}Custom template paginator{% endblock %}
+
+{% block pagination_top %}{% pagination template_name="paginator/custom.html" %}{% endblock %}
+{% block pagination_bottom %}{% pagination template_name="paginator/custom.html" %}{% endblock %}
+

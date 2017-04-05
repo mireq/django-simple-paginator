@@ -1,0 +1,13 @@
+{% load paginator_tags %}
+
+<ul>
+	<li class="count">
+		Displaying from {{ page_obj.start_index }} to {{ page_obj.end_index }} from {{ page_obj.paginator.count }}
+	</li>
+	{% if page_obj.has_previous %}
+		<li class="prev"><a href="{% pager_url page_obj.previous_page_number %}">Previous</a></li>
+	{% endif %}
+	{% if page_obj.has_next %}
+		<li class="next"><a href="{% pager_url page_obj.next_page_number %}">Next</a></li>
+	{% endif %}
+</ul>
