@@ -7,12 +7,12 @@
 
 {% block content %}
 	<div class="paginated-list">
-		<div class="pagination top">{% pagination %}</div>
+		<div class="pagination top">{% block pagination_top %}{% pagination %}{% endblock %}</div>
 		<ul class="items">
 			{% for object in object_list %}
 				<li>{{ object }}</li>
 			{% endfor %}
 		</ul>
-		<div class="pagination bottom">{% pagination %}</div>
+		<div class="pagination bottom">{% block pagination_bottom %}{% pagination %}{% endblock %}</div>
 	</div>
 {% endblock %}

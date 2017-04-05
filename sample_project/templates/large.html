@@ -1,0 +1,9 @@
+{% extends "default.html" %}
+
+{% load paginator_tags %}
+
+{% block site_title %}Large paginator{% endblock %}
+{% block head_title %}Large paginator{% endblock %}
+
+{% block pagination_top %}{% pagination inner=5 outer=10 %}{% endblock %}
+{% block pagination_bottom %}{% pagination inner=10 outer=5 %}{% endblock %}

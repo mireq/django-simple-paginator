@@ -11,7 +11,7 @@ from ..settings import PAGINATOR_INNER_COUNT, PAGINATOR_OUTER_COUNT
 register = template.Library()
 
 
-def assign_range_to_page_obj(page_obj, inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT):
+def assign_range_to_page_obj(page_obj, inner, outer):
 	page_obj.page_range = []
 
 	ranges = []
@@ -41,11 +41,11 @@ def assign_range_to_page_obj(page_obj, inner=PAGINATOR_INNER_COUNT, outer=PAGINA
 	return page_obj
 
 
-def pagination_ctx(context, page_obj=None, page_kwarg='page'):
+def pagination_ctx(context, page_obj, page_kwarg, inner, outer):
 	page_obj = page_obj or context['page_obj']
 	inner_context = copy(context)
 	ctx_update = {
-		'page_obj': assign_range_to_page_obj(page_obj),
+		'page_obj': assign_range_to_page_obj(page_obj, inner, outer),
 		'page_kwarg': page_kwarg,
 	}
 	inner_context.update(ctx_update)
@@ -53,9 +53,9 @@ def pagination_ctx(context, page_obj=None, page_kwarg='page'):
 
 
 @register.simple_tag(takes_context=True)
-def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html'):
+def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT):
 	template = context.template.engine.get_template(template_name)
-	rendered = template.render(pagination_ctx(context, page_obj, page_kwarg))
+	rendered = template.render(pagination_ctx(context, page_obj, page_kwarg, inner, outer))
 	return mark_safe(rendered)
 
 
