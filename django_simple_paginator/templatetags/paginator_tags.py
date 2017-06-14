@@ -2,7 +2,7 @@
 from copy import copy
 
 from django import template
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from django.utils.safestring import mark_safe
 
 from ..settings import PAGINATOR_INNER_COUNT, PAGINATOR_OUTER_COUNT
