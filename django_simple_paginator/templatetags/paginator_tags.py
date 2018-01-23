@@ -42,7 +42,10 @@ def assign_range_to_page_obj(page_obj, inner, outer):
 
 def pagination_ctx(context, page_obj, page_kwarg, inner, outer):
 	page_obj = page_obj or context['page_obj']
-	inner_context = dict(context)
+	if hasattr(context, 'flatten'):
+		inner_context = context.flatten()
+	else:
+		inner_context = dict(context)
 	ctx_update = {
 		'page_obj': assign_range_to_page_obj(page_obj, inner, outer),
 		'page_kwarg': page_kwarg,
