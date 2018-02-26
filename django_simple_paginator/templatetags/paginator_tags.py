@@ -67,7 +67,7 @@ def pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_ar
 
 
 @register.simple_tag(takes_context=True)
-def pagination(context, *url_args, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, url_name=None, **url_kwargs): # pylint: disable=too-many-arguments
+def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
 	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_args, url_kwargs))
 	return mark_safe(rendered)
 
