@@ -40,7 +40,7 @@ def assign_range_to_page_obj(page_obj, inner, outer):
 	return page_obj
 
 
-def pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_args, url_kwargs):
+def pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_args, url_kwargs): # pylint: disable=too-many-arguments
 	page_obj = page_obj or context['page_obj']
 	if hasattr(context, 'flatten'):
 		inner_context = context.flatten()
@@ -67,7 +67,7 @@ def pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_ar
 
 
 @register.simple_tag(takes_context=True)
-def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
+def pagination(context, *url_args, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, url_name=None, **url_kwargs): # pylint: disable=too-many-arguments
 	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_args, url_kwargs))
 	return mark_safe(rendered)
 
@@ -82,13 +82,13 @@ def pager_url(context, page_num):
 	kwargs = {k: v for k, v in url_kwargs.items() if v is not None}
 	kwargs[page_kwarg] = page_num
 	try:
-		url_args = '?' + request.GET.urlencode() if request.GET else ''
-		full_url = reverse(url_name, args=url_args, kwargs=kwargs) + url_args
+		url_query = '?' + request.GET.urlencode() if request.GET else ''
+		full_url = reverse(url_name, args=url_args, kwargs=kwargs) + url_query
 		if page_num == 1:
 			kwargs = url_kwargs.copy()
 			kwargs.pop(page_kwarg, None)
 			try:
-				return reverse(url_name, args=url_args, kwargs=kwargs) + url_args
+				return reverse(url_name, args=url_args, kwargs=kwargs) + url_query
 			except NoReverseMatch:
 				pass
 		return full_url
