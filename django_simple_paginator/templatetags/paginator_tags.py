@@ -82,13 +82,13 @@ def pager_url(context, page_num):
 	kwargs = {k: v for k, v in url_kwargs.items() if v is not None}
 	kwargs[page_kwarg] = page_num
 	try:
-		url_query = '?' + request.GET.urlencode() if request.GET else ''
-		full_url = reverse(url_name, args=url_args, kwargs=kwargs) + url_query
+		get_params = '?' + request.GET.urlencode() if request.GET else ''
+		full_url = reverse(url_name, args=url_args, kwargs=kwargs) + get_params
 		if page_num == 1:
 			kwargs = url_kwargs.copy()
 			kwargs.pop(page_kwarg, None)
 			try:
-				return reverse(url_name, args=url_args, kwargs=kwargs) + url_query
+				return reverse(url_name, args=url_args, kwargs=kwargs) + get_params
 			except NoReverseMatch:
 				pass
 		return full_url
