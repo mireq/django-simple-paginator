@@ -41,7 +41,7 @@ def assign_range_to_page_obj(page_obj, inner, outer):
 
 
 def pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_args, url_kwargs): # pylint: disable=too-many-arguments
-	if page_obj is None:
+	if page_obj is None or page_obj == '':
 		page_obj = context['page_obj']
 	if hasattr(context, 'flatten'):
 		inner_context = context.flatten()
