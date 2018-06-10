@@ -40,7 +40,7 @@ def assign_range_to_page_obj(page_obj, inner, outer):
 	return page_obj
 
 
-def pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_args, url_kwargs): # pylint: disable=too-many-arguments
+def pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, url_name, url_args, url_kwargs): # pylint: disable=too-many-arguments
 	if page_obj is None or page_obj == '':
 		page_obj = context['page_obj']
 	if hasattr(context, 'flatten'):
@@ -64,12 +64,14 @@ def pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_ar
 		'url_kwargs': url_kwargs,
 	}
 	inner_context.update(ctx_update)
+	if extra_context is not None:
+		inner_context.update(extra_context)
 	return inner_context
 
 
 @register.simple_tag(takes_context=True)
-def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
-	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg, inner, outer, url_name, url_args, url_kwargs))
+def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, extra_context=None, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
+	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, url_name, url_args, url_kwargs))
 	return mark_safe(rendered)
 
 
