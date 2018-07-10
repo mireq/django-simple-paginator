@@ -13,6 +13,9 @@ class PageConverter:
 			return 1
 
 	def to_url(self, value):
+		if not value:
+			return ''
+		value = int(value)
 		if value == 1:
 			return ''
 		else:
