@@ -5,7 +5,7 @@ from django.urls import reverse, NoReverseMatch
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 
-from ..settings import PAGINATOR_INNER_COUNT, PAGINATOR_OUTER_COUNT
+from ..settings import PAGINATOR_INNER_COUNT, PAGINATOR_OUTER_COUNT, PAGINATOR_TEMPLATE_NAME
 
 
 register = template.Library()
@@ -71,7 +71,7 @@ def pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, u
 
 
 @register.simple_tag(takes_context=True)
-def pagination(context, page_obj=None, page_kwarg='page', template_name='paginator/paginator.html', inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, extra_context=None, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
+def pagination(context, page_obj=None, page_kwarg='page', template_name=PAGINATOR_TEMPLATE_NAME, inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, extra_context=None, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
 	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, url_name, url_args, url_kwargs))
 	return mark_safe(rendered)
 
