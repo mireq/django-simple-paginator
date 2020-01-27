@@ -2,7 +2,7 @@
 from django import template
 from django.template.loader import render_to_string
 from django.urls import reverse, NoReverseMatch
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 
 from ..settings import PAGINATOR_INNER_COUNT, PAGINATOR_OUTER_COUNT, PAGINATOR_TEMPLATE_NAME
@@ -98,7 +98,7 @@ def pager_url(context, page_num):
 		return full_url
 	except NoReverseMatch:
 		get = request.GET.copy()
-		get[page_kwarg] = force_text(page_num)
+		get[page_kwarg] = force_str(page_num)
 		base_url = reverse(url_name, args=url_args, kwargs=url_kwargs)
 		return base_url + '?' + get.urlencode()
 
