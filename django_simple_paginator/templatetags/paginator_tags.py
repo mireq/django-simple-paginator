@@ -105,9 +105,12 @@ def pager_url(context, page_num):
 
 try:
 	from django_jinja import library
-	from jinja2 import contextfunction
+	try:
+		from jinja2 import pass_context
+	except ImportError:
+		from jinja2 import contextfunction as pass_context
 
-	library.global_function(contextfunction(pagination))
-	library.global_function(contextfunction(pager_url))
+	library.global_function(pass_context(pagination))
+	library.global_function(pass_context(pager_url))
 except ImportError:
 	pass
