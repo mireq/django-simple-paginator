@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.core.paginator import InvalidPage, Paginator
 from django.http import Http404
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 def paginate_queryset(queryset, page, page_size):
