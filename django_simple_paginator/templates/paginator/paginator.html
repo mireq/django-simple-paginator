@@ -3,7 +3,7 @@
 <ul>
 	<li class="prev{% if not page_obj.has_previous %} disabled{% endif %}"><a href="{% if page_obj.has_previous %}{% pager_url page_obj.previous_page_number %}{% else %}#{% endif %}">&lt;</a></li>
 
-	{% for page in page_obj.page_range %}
+	{% for page in page_range %}
 		{% if page %}
 		<li class="page {% if page_obj.number == page %}active{% endif %}"><a href="{% pager_url page %}">{{ page }}</a></li>
 		{% else %}

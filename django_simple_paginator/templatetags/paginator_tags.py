@@ -33,8 +33,10 @@ def pagination_ctx(context, page_obj, page_kwarg, on_each_side, on_ends, extra_c
 	else:
 		url_args = url_args or []
 		url_kwargs = url_kwargs or {}
+	page_obj = assign_range_to_page_obj(page_obj, on_each_side, on_ends)
 	ctx_update = {
-		'page_obj': assign_range_to_page_obj(page_obj, on_each_side, on_ends),
+		'page_obj': page_obj,
+		'page_range': page_obj.page_range,
 		'page_kwarg': page_kwarg,
 		'url_name': url_name,
 		'url_args': url_args,
