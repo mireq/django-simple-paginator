@@ -5,19 +5,19 @@ from django.urls import reverse, NoReverseMatch
 from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 
-from ..settings import PAGINATOR_INNER_COUNT, PAGINATOR_OUTER_COUNT, PAGINATOR_TEMPLATE_NAME
+from ..settings import PAGINATOR_ON_EACH_SIDE, PAGINATOR_ON_ENDS, PAGINATOR_TEMPLATE_NAME
 
 
 register = template.Library()
 
 
-def assign_range_to_page_obj(page_obj, inner, outer):
-	page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=inner, on_ends=outer)
+def assign_range_to_page_obj(page_obj, on_each_side, on_ends):
+	page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=on_each_side, on_ends=on_ends)
 	page_obj.page_range = [None if page == '…' else page for page in page_range]
 	return page_obj
 
 
-def pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, url_name, url_args, url_kwargs): # pylint: disable=too-many-arguments
+def pagination_ctx(context, page_obj, page_kwarg, on_each_side, on_ends, extra_context, url_name, url_args, url_kwargs): # pylint: disable=too-many-arguments
 	if page_obj is None or page_obj == '':
 		page_obj = context['page_obj']
 	if hasattr(context, 'flatten'):
@@ -34,7 +34,7 @@ def pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, u
 		url_args = url_args or []
 		url_kwargs = url_kwargs or {}
 	ctx_update = {
-		'page_obj': assign_range_to_page_obj(page_obj, inner, outer),
+		'page_obj': assign_range_to_page_obj(page_obj, on_each_side, on_ends),
 		'page_kwarg': page_kwarg,
 		'url_name': url_name,
 		'url_args': url_args,
@@ -47,8 +47,8 @@ def pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, u
 
 
 @register.simple_tag(takes_context=True)
-def pagination(context, page_obj=None, page_kwarg='page', template_name=PAGINATOR_TEMPLATE_NAME, inner=PAGINATOR_INNER_COUNT, outer=PAGINATOR_OUTER_COUNT, extra_context=None, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
-	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg, inner, outer, extra_context, url_name, url_args, url_kwargs))
+def pagination(context, page_obj=None, page_kwarg='page', template_name=PAGINATOR_TEMPLATE_NAME, on_each_side=PAGINATOR_ON_EACH_SIDE, on_ends=PAGINATOR_ON_ENDS, extra_context=None, url_name=None, *url_args, **url_kwargs): # pylint: disable=too-many-arguments
+	rendered = render_to_string(template_name, pagination_ctx(context, page_obj, page_kwarg, on_each_side, on_ends, extra_context, url_name, url_args, url_kwargs))
 	return mark_safe(rendered)
 
 
