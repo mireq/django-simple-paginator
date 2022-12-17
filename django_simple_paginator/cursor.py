@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-from django.core.paginator import Paginator, Page
-from django.utils.functional import cached_property
-from django.db.models.expressions import OrderBy
-from django.db.models import F
-from django.core.paginator import InvalidPage
-from django.utils.translation import gettext
-import collections.abc
+from collections import namedtuple
 from functools import partial
-from . import utils
+
+from django.core.paginator import Paginator, Page, InvalidPage
+from django.db.models import F
+from django.db.models.expressions import OrderBy
+from django.utils.functional import cached_property
+from django.utils.translation import gettext
+
+from . import constants, utils
+
+
+OrderKeyFilter = namedtuple('OrderKeyFilter', ['direction', 'values'])
 
 
 class CursorPage(Page):
@@ -28,12 +32,12 @@ class CursorPage(Page):
 	def next_page_number(self):
 		self.initialize()
 		page_desc = self.encode_order_key(self.paginator.get_order_key(self.last_item))
-		return 'f' + page_desc
+		return constants.KEY_NEXT + page_desc
 
 	def previous_page_number(self):
 		self.initialize()
 		page_desc = self.encode_order_key(self.paginator.get_order_key(self.first_item))
-		return 'b' + page_desc
+		return constants.KEY_BACK + page_desc
 
 	def initialize(self):
 		if self.initialized:
@@ -59,13 +63,25 @@ class IteratorWrapper(object):
 
 			if start_key is not None:
 				# first hidden item used to render previous link
-				if self._result_cache and self.paginator.get_order_key(self._result_cache[0]) == start_key:
-					self.page.prev_page_item = self._result_cache.pop(0)
+				if self._result_cache and self.paginator.get_order_key(self._result_cache[0]) == start_key.values:
+					if start_key.direction == constants.KEY_BACK:
+						self.page.next_page_item = self._result_cache.pop(0)
+					else:
+						self.page.prev_page_item = self._result_cache.pop(0)
 
-			# hide lastitem
+
+			# hide last item
 			if len(self._result_cache) > self.paginator.per_page:
-				self.page.next_page_item = self._result_cache.pop()
+				if start_key is not None and start_key.direction == constants.KEY_BACK:
+					self.page.prev_page_item = self._result_cache.pop()
+				else:
+					self.page.next_page_item = self._result_cache.pop()
 
+			# revert backwards iterated queryset
+			if start_key is not None and start_key.direction == constants.KEY_BACK:
+				self._result_cache = self._result_cache[::-1]
+
+			# set first an dlast items of page
 			if self._result_cache:
 				self.page.first_item = self._result_cache[0]
 				self.page.last_item = self._result_cache[-1]
@@ -89,31 +105,31 @@ class CursorPaginator(Paginator):
 					order_by.append(F(field).asc())
 
 		self.order_by = order_by
-		self.per_page = 1
 
 	def validate_number(self, number):
 		if not number or not isinstance(number, str):
 			return None
 		direction = number[:1]
-		if direction not in {'f', 'b'}:
+		if direction not in {constants.KEY_BACK, constants.KEY_NEXT}:
 			raise self.raise_invalid_page_format()
-		number = [direction] + utils.decode_order_key(number[1:])
-		print(number)
-		#try:
-		#	number = [direction] + utils.decode_order_key(number[1:])
-		#except Exception:
-		#	self.raise_invalid_page_format()
-		return number
+		try:
+			return OrderKeyFilter(direction, utils.decode_order_key(number[1:]))
+		except Exception:
+			self.raise_invalid_page_format()
 
 	def raise_invalid_page_format(self):
 		raise InvalidPage(gettext("Invalid page format"))
 
 	def page(self, number):
-		print(number)
-		page = CursorPage(None, number, self)
-		limited = self.object_list[1:4]
-		limited._iterable_class = partial(IteratorWrapper, limited._iterable_class, self, page)
-		page.object_list = limited
+		order_key_filter = self.validate_number(number)
+		page = CursorPage(None, order_key_filter, self)
+		count = self.per_page + (2 if order_key_filter else 1) # backward and forward item after begin or single on first page
+		qs = self.object_list
+		if order_key_filter:
+			qs = utils.filter_by_order_key(qs, order_key_filter.direction, order_key_filter.values, self.order_by)
+		qs = qs[:count]
+		qs._iterable_class = partial(IteratorWrapper, qs._iterable_class, self, page)
+		page.object_list = qs
 		return page
 
 	@cached_property
@@ -125,9 +141,7 @@ class CursorPaginator(Paginator):
 		return 0
 
 	def get_start_order_key(self, number):
-		print(number)
 		return number
-		#return (number+51741,)
 
 	def get_order_by_keys(self):
 		return [k.lstrip('-') for k in self.order_by]

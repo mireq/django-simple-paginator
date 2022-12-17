@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import datetime
-import struct
-from io import BytesIO, BufferedReader
+import json
+from copy import deepcopy
 
 from django.core.paginator import InvalidPage, Paginator
+from django.db.models import Q
 from django.http import Http404
 from django.utils.duration import duration_iso_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.translation import gettext_lazy as _
+
+from . import constants
 
 
 def paginate_queryset(queryset, page, page_size):
@@ -34,50 +37,50 @@ def get_order_key(obj, order_by):
 	return tuple(get_model_field_by_path(obj, expr.expression.name) for expr in order_by)
 
 
-def value_to_str(val):
+def prepare_value(val):
 	if isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
 		return val.isoformat()
 	elif isinstance(val, datetime.timedelta):
 		return duration_iso_string(val)
 	else:
-		return str(val)
+		return val
 
 
 def decode_order_key(order_key):
-	order_key = urlsafe_base64_decode(order_key)
-	data = BytesIO(order_key)
-	data.seek(0)
-	stream = BufferedReader(data)
-
-	parts = []
-
-	while True:
-		size = stream.peek(1)[:1]
-		if not size:
-			break
-		size = struct.unpack('B', size)[0]
-		if size < 128:
-			stream.read(1)
-		else:
-			size = stream.read(4)
-			if len(size) != 4:
-				raise ValueError("Truncated order key")
-			size = (struct.unpack('>L', size)[0] & 0x7fffffff) + 128;
-		parts.append(stream.read(size).decode('utf-8'))
-
-	return parts
+	return tuple(json.loads(urlsafe_base64_decode(order_key).decode('utf-8')))
 
 
 def encode_order_key(value):
-	value = [value_to_str(component) for component in value]
-	# construct packed list of strings
-	data = BytesIO()
-	for component in value:
-		component = component.encode('utf-8')
-		if len(component) < 128:
-			data.write(struct.pack('B', len(component)))
-		else:
-			# big endian starting with 1 on most significant place
-			data.write(struct.pack('>L', (len(component) - 128) | 0x80000000))
-		data.write(component)
-	return urlsafe_base64_encode(data.getvalue())
+	value = [prepare_value(val) for val in value]
+	return urlsafe_base64_encode(json.dumps(value).encode('utf-8'))
+
+
+def invert_order_by(order_by):
+	order_by = deepcopy(order_by)
+	for field in order_by:
+		field.descending = not field.descending
+	return order_by
+
+
+def filter_by_order_key(qs, direction, values, order_by):
+	if direction == constants.KEY_BACK:
+		order_by = invert_order_by(order_by)
+		qs = qs.order_by(*order_by)
+
+	filter_chain = {}
+	q = Q()
+
+	for order_key, value in zip(order_by, values):
+		direction = '__lt' if order_key.descending else '__gt'
+		filter_chain[order_key.expression.name + direction] = value
+		q |= Q(**filter_chain)
+		del filter_chain[order_key.expression.name + direction]
+		filter_chain[order_key.expression.name] = value
+
+	if filter_chain:
+		q |= Q(**filter_chain)
+
+	if q:
+		qs = qs.filter(q)
+
+	return qs
