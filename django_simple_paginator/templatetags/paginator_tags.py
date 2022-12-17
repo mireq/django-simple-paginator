@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django import template
+from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.urls import reverse, NoReverseMatch
 from django.utils.encoding import force_str
@@ -13,7 +14,7 @@ register = template.Library()
 
 def assign_range_to_page_obj(page_obj, on_each_side, on_ends):
 	page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=on_each_side, on_ends=on_ends)
-	page_obj.page_range = [None if page == '…' else page for page in page_range]
+	page_obj.page_range = [None if page == Paginator.ELLIPSIS else page for page in page_range]
 	return page_obj
 
 
