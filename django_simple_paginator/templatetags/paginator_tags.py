@@ -12,32 +12,8 @@ register = template.Library()
 
 
 def assign_range_to_page_obj(page_obj, inner, outer):
-	page_obj.page_range = []
-
-	ranges = []
-	ranges.append((1, min(page_obj.paginator.num_pages, outer)))
-	ranges.append((max(page_obj.number - inner, 1), min(page_obj.number + inner, page_obj.paginator.num_pages)))
-	ranges.append((max(page_obj.paginator.num_pages + 1 - outer, 1), (page_obj.paginator.num_pages)))
-
-	new_ranges = []
-	current_range = (1, 1)
-	for r in ranges:
-		# Spojenie
-		if current_range[1] >= r[0] - 1:
-			current_range = (current_range[0], r[1])
-		else:
-			new_ranges.append(current_range)
-			current_range = r
-
-	if not current_range is None:
-		new_ranges.append(current_range)
-
-	for r in new_ranges:
-		page_obj.page_range += range(r[0], r[1] + 1)
-		page_obj.page_range.append(None)
-
-	if page_obj.page_range and page_obj.page_range[-1] is None:
-		page_obj.page_range = page_obj.page_range[0:-1]
+	page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=inner, on_ends=outer)
+	page_obj.page_range = [None if page == '…' else page for page in page_range]
 	return page_obj
 
 
