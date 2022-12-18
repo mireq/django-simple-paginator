@@ -139,3 +139,13 @@ def paginate_cursor_queryset(queryset, page_number, page_size):
 		return (paginator, page, page.object_list, page.has_other_pages())
 	except InvalidPage:
 		raise Http404(_('Invalid page link'))
+
+
+class CursorPaginateMixin(object):
+	"""
+	Used to replace paginate_by method of ListView
+	"""
+	def paginate_queryset(self, queryset, page_size):
+		page_kwarg = self.page_kwarg
+		page_number = self.kwargs.get(page_kwarg) or self.request.GET.get(page_kwarg) or 1
+		return paginate_cursor_queryset(queryset, page_number, page_size)

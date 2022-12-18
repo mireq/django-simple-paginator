@@ -11,8 +11,13 @@ from django.utils import timezone
 from .models import Book, BookOrdered, Review
 from django_simple_paginator import constants
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.cursor import paginate_cursor_queryset
+from django_simple_paginator.cursor import paginate_cursor_queryset, CursorPaginateMixin
 from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, get_order_by, invert_order_by, convert_to_order_by, convert_order_by_to_expressions, filter_by_order_key
+
+
+class CursorPaginatedView(CursorPaginateMixin):
+	page_kwarg = 'page'
+	kwargs = {'page': 1}
 
 
 class TestPageConverter(TestCase):
@@ -327,6 +332,14 @@ class TestCursorPaginator(TestCase):
 
 		books = Book.objects.order_by('pk')
 		__, page, qs, __ = paginate_cursor_queryset(books, number, 2)
+		self.assertBookPage([1, 2], qs)
+
+	def test_cbv(self):
+		v = CursorPaginatedView()
+
+		books = Book.objects.order_by('pk')
+
+		__, __, qs, __ = v.paginate_queryset(books, page_size=2)
 		self.assertBookPage([1, 2], qs)
 
 	def assertBookPage(self, ids, qs):
