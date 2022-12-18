@@ -2,11 +2,10 @@
 from collections import namedtuple
 from functools import partial
 
-from django.core.paginator import Paginator, Page, InvalidPage
-from django.db.models import F
-from django.db.models.expressions import OrderBy
+from django.core.paginator import InvalidPage, Paginator, Page
+from django.http import Http404
 from django.utils.functional import cached_property
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy as _
 
 from . import constants, utils
 
@@ -19,31 +18,20 @@ class CursorPage(Page):
 	prev_page_item = None
 	first_item = None
 	last_item = None
-	initialized = False
 
 	def has_next(self):
-		self.initialize()
 		return self.next_page_item is not None
 
 	def has_previous(self):
-		self.initialize()
 		return self.prev_page_item is not None
 
 	def next_page_number(self):
-		self.initialize()
 		page_desc = self.url_encode_order_key(self.paginator.get_order_key(self.last_item))
 		return constants.KEY_NEXT + page_desc
 
 	def previous_page_number(self):
-		self.initialize()
 		page_desc = self.url_encode_order_key(self.paginator.get_order_key(self.first_item))
 		return constants.KEY_BACK + page_desc
-
-	def initialize(self):
-		if self.initialized:
-			return
-		self.initialized = True
-		next(iter(self.object_list))
 
 	def url_encode_order_key(self, value):
 		return utils.url_encode_order_key(value)
@@ -62,15 +50,14 @@ class IteratorWrapper(object):
 			start_key = self.paginator.get_start_order_key(self.page.number)
 
 			if start_key is not None:
-				# first hidden item used to render previous link
+				# first item handling (used to check previous page existence)
 				if self._result_cache and self.paginator.get_order_key(self._result_cache[0]) == start_key.values:
 					if start_key.direction == constants.KEY_BACK:
 						self.page.next_page_item = self._result_cache.pop(0)
 					else:
 						self.page.prev_page_item = self._result_cache.pop(0)
 
-
-			# hide last item
+			# last item handling (used to check previous page existence)
 			if len(self._result_cache) > self.paginator.per_page:
 				if start_key is not None and start_key.direction == constants.KEY_BACK:
 					self.page.prev_page_item = self._result_cache.pop()
@@ -81,7 +68,7 @@ class IteratorWrapper(object):
 			if start_key is not None and start_key.direction == constants.KEY_BACK:
 				self._result_cache = self._result_cache[::-1]
 
-			# set first an dlast items of page
+			# set first and last items of page
 			if self._result_cache:
 				self.page.first_item = self._result_cache[0]
 				self.page.last_item = self._result_cache[-1]
@@ -92,19 +79,7 @@ class IteratorWrapper(object):
 class CursorPaginator(Paginator):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		order_by = []
-		for field in self.object_list.query.order_by:
-			if isinstance(field, OrderBy):
-				order_by.append(field)
-			else:
-				reverse = field[:1] == '-'
-				field = field.lstrip('-')
-				if reverse:
-					order_by.append(F(field).desc())
-				else:
-					order_by.append(F(field).asc())
-
-		self.order_by = order_by
+		self.order_by = utils.convert_order_by_to_expressions(utils.get_order_by(self.object_list))
 
 	def validate_number(self, number):
 		if not number or not isinstance(number, str):
@@ -126,10 +101,12 @@ class CursorPaginator(Paginator):
 		count = self.per_page + (2 if order_key_filter else 1) # backward and forward item after begin or single on first page
 		qs = self.object_list
 		if order_key_filter:
-			qs = utils.filter_by_order_key(qs, order_key_filter.direction, order_key_filter.values, self.order_by)
+			qs = utils.filter_by_order_key(qs, order_key_filter.direction, order_key_filter.values)
 		qs = qs[:count]
 		qs._iterable_class = partial(IteratorWrapper, qs._iterable_class, self, page)
 		page.object_list = qs
+		# force initialization
+		next(iter(qs))
 		return page
 
 	@cached_property
@@ -142,9 +119,6 @@ class CursorPaginator(Paginator):
 
 	def get_start_order_key(self, number):
 		return number
-
-	def get_order_by_keys(self):
-		return [k.lstrip('-') for k in self.order_by]
 
 	def get_order_key(self, obj):
 		return utils.get_order_key(obj, self.order_by)
