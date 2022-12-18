@@ -31,12 +31,12 @@ class CursorPage(Page):
 
 	def next_page_number(self):
 		self.initialize()
-		page_desc = self.encode_order_key(self.paginator.get_order_key(self.last_item))
+		page_desc = self.url_encode_order_key(self.paginator.get_order_key(self.last_item))
 		return constants.KEY_NEXT + page_desc
 
 	def previous_page_number(self):
 		self.initialize()
-		page_desc = self.encode_order_key(self.paginator.get_order_key(self.first_item))
+		page_desc = self.url_encode_order_key(self.paginator.get_order_key(self.first_item))
 		return constants.KEY_BACK + page_desc
 
 	def initialize(self):
@@ -45,8 +45,8 @@ class CursorPage(Page):
 		self.initialized = True
 		next(iter(self.object_list))
 
-	def encode_order_key(self, value):
-		return utils.encode_order_key(value)
+	def url_encode_order_key(self, value):
+		return utils.url_encode_order_key(value)
 
 
 class IteratorWrapper(object):
@@ -113,7 +113,7 @@ class CursorPaginator(Paginator):
 		if direction not in {constants.KEY_BACK, constants.KEY_NEXT}:
 			raise self.raise_invalid_page_format()
 		try:
-			return OrderKeyFilter(direction, utils.decode_order_key(number[1:]))
+			return OrderKeyFilter(direction, utils.url_decode_order_key(number[1:]))
 		except Exception:
 			self.raise_invalid_page_format()
 

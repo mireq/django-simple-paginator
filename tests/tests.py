@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+from django.db.models import F
 from django.http import Http404
 from django.test import TestCase
 from django.urls import reverse
-from django.db.models import F
+from django.utils import timezone
+from datetime import datetime
 
 from .models import Book, Review
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key
+from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key
 
 
 class TestPageConverter(TestCase):
@@ -86,3 +88,17 @@ class TestUtils(TestCase):
 			(review.pk, review.book_id, review.book.name),
 			get_order_key(review, ['pk', 'book_id', 'book__name'])
 		)
+
+	def test_encode_order_key(self):
+		order_key = ()
+		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+		order_key = (1,)
+		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+		order_key = (None,)
+		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+		order_key = (1, "text")
+		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+		order_key = (timezone.now(),)
+		processed_order_key = url_decode_order_key(url_encode_order_key(order_key))
+		processed_order_key = (datetime.fromisoformat(processed_order_key[0]),)
+		self.assertEqual(order_key, processed_order_key)

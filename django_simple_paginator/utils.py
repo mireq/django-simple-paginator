@@ -4,11 +4,11 @@ import json
 from copy import deepcopy
 
 from django.core.paginator import InvalidPage, Paginator
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
-from django.db.models.expressions import OrderBy
 from django.db.models.constants import LOOKUP_SEP
+from django.db.models.expressions import OrderBy
 from django.http import Http404
-from django.utils.duration import duration_iso_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.translation import gettext_lazy as _
 
@@ -52,28 +52,26 @@ def get_order_key(obj, order_by):
 	)
 
 
-def prepare_value(val):
-	if isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
-		return val.isoformat()
-	elif isinstance(val, datetime.timedelta):
-		return duration_iso_string(val)
-	else:
-		return val
-
-
-def decode_order_key(order_key):
+def url_decode_order_key(order_key):
 	return tuple(json.loads(urlsafe_base64_decode(order_key).decode('utf-8')))
 
 
-def encode_order_key(value):
-	value = [prepare_value(val) for val in value]
-	return urlsafe_base64_encode(json.dumps(value).encode('utf-8'))
+def url_encode_order_key(value):
+	# prevent microsecond clipping
+	value = [v.isoformat() if isinstance(v, datetime.datetime) else v for v in value]
+	return urlsafe_base64_encode(json.dumps(value, cls=DjangoJSONEncoder).encode('utf-8'))
 
 
 def invert_order_by(order_by):
 	order_by = deepcopy(order_by)
 	for field in order_by:
 		field.descending = not field.descending
+		if field.nulls_first:
+			field.nulls_first = False
+			field.nulls_last = True
+		elif field.nulls_last:
+			field.nulls_last = False
+			field.nulls_first = True
 	return order_by
 
 
