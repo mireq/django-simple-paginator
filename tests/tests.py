@@ -364,3 +364,7 @@ class TestTemplates(TestCase):
 		response = self.client.get(url)
 		self.assertContains(response, '/page/3/')
 		self.assertContains(response, '/using-get/?page=3')
+
+		response = self.client.get(f'{url}?engine=jinja')
+		self.assertEqual(['example.jinja'], response.template_name)
+		self.assertContains(response, '/page/3/')

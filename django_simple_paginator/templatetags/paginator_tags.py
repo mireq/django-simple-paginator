@@ -91,5 +91,5 @@ try:
 
 	library.global_function(pass_context(pagination))
 	library.global_function(pass_context(pager_url))
-except ImportError:
-	pass
+except ImportError: # pragma: no cover
+	pass # pragma: no cover

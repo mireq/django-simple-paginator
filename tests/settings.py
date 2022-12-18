@@ -18,8 +18,14 @@ DATABASES = {
 
 TEMPLATES = [
 	{
+		"BACKEND": "django_jinja.backend.Jinja2",
+		'DIRS': [BASE_DIR / 'templates' / 'jinja'],
+		"APP_DIRS": True,
+		"OPTIONS": {}
+	},
+	{
 		'BACKEND': 'django.template.backends.django.DjangoTemplates',
-		'DIRS': [BASE_DIR / 'templates'],
+		'DIRS': [BASE_DIR / 'templates' / 'django'],
 		'APP_DIRS': True,
 		'OPTIONS': {
 			'context_processors': ['django.template.context_processors.request'],
