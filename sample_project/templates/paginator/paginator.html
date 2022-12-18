@@ -8,7 +8,7 @@
 		{% if page %}
 		<li class="page {% if page_obj.number == page %}active{% endif %}"><a href="{% pager_url page %}">{{ page }}</a></li>
 		{% else %}
-		<li class="disabled dots"><a href="#">...</a></li>
+		<li class="disabled dots"><a href="#">…</a></li>
 		{% endif %}
 	{% endfor %}
 	{% if page_obj.has_next %}
