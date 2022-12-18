@@ -2,6 +2,7 @@
 import datetime
 import json
 from copy import deepcopy
+import logging
 
 from django.core.paginator import InvalidPage, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
@@ -13,6 +14,9 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.translation import gettext_lazy as _
 
 from . import constants
+
+
+logger = logging.getLogger(__name__)
 
 
 def paginate_queryset(queryset, page, page_size):
@@ -128,29 +132,58 @@ def filter_by_order_key(qs, direction, start_position):
 	# name > 'x' OR name = 'x' AND parent > 1 OR name = 'x' AND parent = 1 AND id >= 2
 	for i, value in enumerate(zip(order_by, start_position)):
 		# unpack values
-		order_key, value = value
-		# smaller or greater
-		direction = 'lt' if order_key.descending else 'gt'
-		if i == len(order_by) - 1: # change > to >= and < to <= on last iteration
-			direction = f'{direction}e'
+		order_expression, value = value
 
-		# construct field lookup
-		field_name = order_key.expression.name
-		field_lookup = f'{field_name}__{direction}'
+		# last tieration
+		is_last = i == len(order_by) - 1
 
-		# set lookup to current combination
-		filter_combinations[field_lookup] = value
+		# filter by
+		field_name = order_expression.expression.name
+
+		# or combinations used to correctly select null values
+		filter_or = Q()
+		if order_expression.nulls_last and value is not None:
+			filter_or |= Q(**{f'{field_name}__isnull': True})
+
+		field_lookup = ''
+		if value is None: # special NULL handling
+			if order_expression.nulls_last:
+				field_lookup = f'{field_name}__isnull'
+				filter_combinations[field_lookup] = True
+				continue
+			if order_expression.nulls_first:
+				filter_combinations[f'{field_name}__isnull'] = False
+				q |= Q(**filter_combinations)
+				filter_combinations[f'{field_name}__isnull'] = True
+				continue
+			else:
+				logger.warning("No nulls_first / nulls_last specified")
+		else:
+			# smaller or greater
+			direction = 'lt' if order_expression.descending else 'gt'
+			if is_last: # change > to >= and < to <= on last iteration
+				direction = f'{direction}e'
+
+			# construct field lookup
+			field_lookup = f'{field_name}__{direction}'
+
+			# set lookup to current combination
+			filter_combinations[field_lookup] = value
 
 		# apply combination
-		q |= Q(**filter_combinations)
+		filter_combination = Q(**filter_combinations)
+		if filter_or:
+			filter_combination |= filter_or
+		q |= filter_combination
 
 		# transform >, < to equals
-		del filter_combinations[field_lookup]
+		filter_combinations.pop(field_lookup, None)
 		filter_combinations[field_name] = value
 
 	# apply filter
 	if q:
 		try:
+			print(q)
 			qs = qs.filter(q)
 		except Exception:
 			raise InvalidPage()

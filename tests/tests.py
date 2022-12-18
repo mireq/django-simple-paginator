@@ -155,13 +155,12 @@ class TestUtils(TestCase):
 	def test_filter_by_order_key(self):
 		book_list = [
 			Book(id=1, pub_time='1970-01-01T00:00:00', name="A"),
-			Book(id=2, pub_time='1970-01-02T00:00:00', name="A", rating=2.0),
-			Book(id=3, pub_time='1970-01-03T00:00:00', name="A", rating=3.0),
+			Book(id=2, pub_time='1970-01-02T00:00:00', name="A", rating=3.0),
+			Book(id=3, pub_time='1970-01-03T00:00:00', name="A", rating=2.0),
 			Book(id=4, pub_time='1970-01-04T00:00:00', name="B"),
 			Book(id=5, pub_time='1970-01-05T00:00:00', name="B"),
 		]
 		Book.objects.bulk_create(book_list)
-		book_list = list(Book.objects.order_by('pk'))
 
 		def get_books(order, values=(), backwards=False):
 			direction = constants.KEY_BACK if backwards else constants.KEY_NEXT
@@ -197,4 +196,43 @@ class TestUtils(TestCase):
 		self.assertEqual([4, 5], books)
 		# trick to check priority
 		books = get_books(['name', 'pk'], ['B', 1])
+		self.assertEqual([4, 5], books)
+
+		# no nulls specified
+		with self.assertLogs('django_simple_paginator.utils'):
+			get_books([F('rating').asc(), 'pk'], [None, 1])
+
+		# playing with NLLL
+		# N1 N4 N5 3 2
+		books = get_books([F('rating').asc(nulls_last=True), 'pk'], [3.0, 2])
+		self.assertEqual([2, 1, 4, 5], books)
+
+		books = get_books([F('rating').asc(nulls_last=True), 'pk'], [None, 3])
+		self.assertEqual([4, 5], books)
+
+		books = get_books([F('rating').asc(nulls_first=True), 'pk'], [2.0, 1])
+		self.assertEqual([3, 2], books)
+
+		books = get_books([F('rating').asc(nulls_first=True), 'pk'], [None, 5])
+		self.assertEqual([5, 3, 2], books)
+
+		books = get_books([F('rating').asc(nulls_first=True), 'pk'], [None, 4])
+		self.assertEqual([4, 5, 3, 2], books)
+
+		Book.objects.all().delete()
+		book_list = [
+			Book(id=1, pub_time='1970-01-01T00:00:00', name="A"),
+			Book(id=2, pub_time='1970-01-02T00:00:00', name="A"),
+			Book(id=3, pub_time='1970-01-03T00:00:00', name="A", rating=3.0),
+			Book(id=4, pub_time='1970-01-04T00:00:00', name="B", rating=2.0),
+			Book(id=5, pub_time='1970-01-05T00:00:00', name="B"),
+		]
+		Book.objects.bulk_create(book_list)
+
+		# A3 AN1 AN2 B5 BN4
+		books = get_books(['name', F('rating').asc(nulls_last=True), 'pk'], ['A', 3.0, 3])
+		self.assertEqual([3, 1, 2, 4, 5], books)
+		books = get_books(['name', F('rating').asc(nulls_last=True), 'pk'], ['A', None, 1])
+		self.assertEqual([1, 2, 4, 5], books)
+		books = get_books(['name', F('rating').asc(nulls_last=True), 'pk'], ['B', 2.0, 4])
 		self.assertEqual([4, 5], books)
