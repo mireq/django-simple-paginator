@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+from django.http import Http404
 from django.test import TestCase
-
-from django_simple_paginator.converter import PageConverter
 from django.urls import reverse
+
+from .models import Book
+from django_simple_paginator.converter import PageConverter
+from django_simple_paginator.utils import paginate_queryset
 
 
 class TestPageConverter(TestCase):
@@ -20,4 +23,30 @@ class TestPageConverter(TestCase):
 		self.assertEqual('2/', converter.to_url('2'))
 
 	def test_urlconf(self):
-		print(reverse('page', kwargs={'page': 1}))
+		self.assertEqual('/page/', reverse('page', kwargs={'page': 1}))
+		self.assertEqual('/page/', reverse('page', kwargs={'page': '1'}))
+		self.assertEqual('/page/2/', reverse('page', kwargs={'page': 2}))
+		self.assertEqual('/page/2/', reverse('page', kwargs={'page': '2'}))
+
+
+class TestUtils(TestCase):
+	def test_paginate_queryset(self):
+		books = [Book(name="1"), Book(name="2"), Book(name="3")]
+		Book.objects.bulk_create(books)
+		qs = Book.objects.order_by('pk')
+		books = list(qs)
+
+		with self.assertRaises(Http404):
+			paginate_queryset(qs, page="invalid", page_size=2)
+
+		with self.assertRaises(Http404):
+			paginate_queryset(qs, page=20, page_size=2)
+
+		paginator, page, object_list, has_others = paginate_queryset(qs, page=2, page_size=2)
+
+		self.assertEqual(2, paginator.per_page)
+		self.assertTrue(page.has_previous())
+		self.assertFalse(page.has_next())
+		self.assertEqual(3, page.end_index())
+		self.assertEqual(books[2:], list(object_list))
+		self.assertTrue(has_others)

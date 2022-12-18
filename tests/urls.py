@@ -8,7 +8,6 @@ def view(request):
 	pass
 
 
-
 register_converter(PageConverter, 'page')
 
 

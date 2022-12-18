@@ -5,8 +5,8 @@ from django.utils import timezone
 
 class Book(models.Model):
 	name = models.CharField(max_length=50)
-	pages = models.IntegerField()
-	is_published = models.BooleanField()
+	pages = models.IntegerField(default=0)
+	is_published = models.BooleanField(default=True)
 	pub_time = models.DateTimeField(default=timezone.now)
 	rating = models.FloatField(blank=True, null=True)
 

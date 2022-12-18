@@ -14,6 +14,9 @@ from . import constants
 
 
 def paginate_queryset(queryset, page, page_size):
+	"""
+	Shortcut to paginate queryset
+	"""
 	paginator = Paginator(queryset, page_size)
 	try:
 		page_number = int(page)
