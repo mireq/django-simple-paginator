@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 class PageConverter:
+	"""
+	Converts from / to paginated URL
+	"""
 	regex = r'(?:\d+/)?'
 
 	def to_python(self, value):
