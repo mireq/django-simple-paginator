@@ -363,8 +363,4 @@ class TestTemplates(TestCase):
 		url = reverse('page', kwargs={'page': 1})
 		response = self.client.get(url)
 		self.assertContains(response, '/page/3/')
-
-	def test_using_get(self):
-		url = reverse('using_get')
-		response = self.client.get(url)
 		self.assertContains(response, '/using-get/?page=3')
