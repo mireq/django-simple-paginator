@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Book, Review
+from .models import Book, BookOrdered, Review
 from django_simple_paginator import constants
 from django_simple_paginator.converter import PageConverter
 from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, get_order_by, invert_order_by, convert_to_order_by, convert_order_by_to_expressions, filter_by_order_key
@@ -98,7 +98,7 @@ class TestUtils(TestCase):
 		self.assertEqual(('name', 'pk'), get_order_by(qs))
 
 		# default ordering
-		qs = Book.objects.all()
+		qs = BookOrdered.objects.all()
 		self.assertEqual(('pk',), get_order_by(qs))
 
 	def test_encode_order_key(self):
@@ -172,9 +172,9 @@ class TestUtils(TestCase):
 		Book.objects.bulk_create(book_list)
 		book_list = {b.pk: b for b in Book.objects.all()}
 
-		def get_books(order, values=(), backwards=False):
+		def get_books(order, values=(), backwards=False, model=Book):
 			direction = constants.KEY_BACK if backwards else constants.KEY_NEXT
-			books = Book.objects.order_by(*order).values_list('pk', flat=True)
+			books = model.objects.order_by(*order).values_list('pk', flat=True)
 			return list(filter_by_order_key(books, direction, values))
 
 		with self.assertRaises(InvalidPage):

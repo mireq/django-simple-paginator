@@ -12,8 +12,11 @@ class Book(models.Model):
 	def __str__(self):
 		return f'#{self.pk} {self.name}, published: {self.is_published} ({self.pub_time.isoformat()}), rating: {self.rating}'
 
+
+class BookOrdered(Book):
 	class Meta:
 		ordering = ('pk',)
+		proxy = True
 
 
 class Review(models.Model):

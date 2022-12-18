@@ -122,7 +122,7 @@ def filter_by_order_key(qs, direction, start_position):
 	"""
 
 	# change list of strings or expressions to list of expressions
-	order_by = convert_order_by_to_expressions(qs.query.order_by)
+	order_by = convert_order_by_to_expressions(get_order_by(qs))
 
 	# check if we have required start_position
 	if len(start_position) != len(order_by):
