@@ -5,10 +5,13 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from datetime import datetime
+from pprint import pprint
+from django.core.paginator import InvalidPage
 
 from .models import Book, Review
+from django_simple_paginator import constants
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, invert_order_by
+from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, invert_order_by, filter_by_order_key
 
 
 class TestPageConverter(TestCase):
@@ -116,15 +119,58 @@ class TestUtils(TestCase):
 		order_by = [F('name').asc()]
 		inverted = [F('name').desc()]
 		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+
 		order_by = [F('name').desc()]
 		inverted = [F('name').asc()]
 		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+
 		order_by = [F('name').asc(nulls_first=True)]
 		inverted = [F('name').desc(nulls_last=True)]
 		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+
 		order_by = [F('name').asc(nulls_last=True)]
 		inverted = [F('name').desc(nulls_first=True)]
 		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
 
 	def assertOrderByEqual(self, a, b):
 		self.assertTrue(a.descending == b.descending and bool(a.nulls_first) == bool(b.nulls_first) and bool(a.nulls_last) == bool(b.nulls_last))
+
+	def test_filter_by_order_key(self):
+		book_list = [
+			Book(id=1, pub_time='1970-01-01T00:00:00', name="A"),
+			Book(id=2, pub_time='1970-01-02T00:00:00', name="A", rating=2.0),
+			Book(id=3, pub_time='1970-01-03T00:00:00', name="A", rating=3.0),
+			Book(id=4, pub_time='1970-01-04T00:00:00', name="B"),
+			Book(id=5, pub_time='1970-01-05T00:00:00', name="B"),
+		]
+		Book.objects.bulk_create(book_list)
+		book_list = list(Book.objects.order_by('pk'))
+
+		def get_books(order, values=(), backwards=False):
+			direction = constants.KEY_BACK if backwards else constants.KEY_NEXT
+			books = Book.objects.order_by(*order).values_list('pk', flat=True)
+			return list(filter_by_order_key(books, direction, values, books.query.order_by))
+
+		with self.assertRaises(InvalidPage):
+			books = get_books([F("pk").asc()], []) # missing parameter
+
+		with self.assertRaises(InvalidPage):
+			books = get_books([F("pk").asc()], ['x']) # wrong value
+
+		# empty filter
+		books = get_books([], [])
+		self.assertEqual([1, 2, 3, 4, 5], books)
+
+		# from 3 forwards
+		books = get_books([F("pk").asc()], [3])
+		self.assertEqual([3, 4, 5], books)
+
+		# from 3 backwards
+		books = get_books([F("pk").asc()], [3], backwards=True) # from 3 backwards
+		self.assertEqual([3, 2, 1], books)
+
+		# reverse
+		books = get_books([F("pk").desc()], [3])
+		self.assertEqual([3, 2, 1], books)
+		books = get_books([F("pk").desc()], [3], backwards=True)
+		self.assertEqual([3, 4, 5], books)

@@ -74,7 +74,7 @@ def invert_order_by(order_by):
 	"""
 	order_by = deepcopy(order_by)
 	for field in order_by:
-		# invert ASC/DESC
+		# invert asc / desc
 		field.descending = not field.descending
 
 		# invert nulls first / last (only one can be active)
@@ -88,25 +88,52 @@ def invert_order_by(order_by):
 	return order_by
 
 
-def filter_by_order_key(qs, direction, values, order_by):
+def filter_by_order_key(qs, direction, start_position, order_by):
+	"""
+	Filter queryset from specific position inncluding start position
+	"""
+
+	# check if we have required start_position
+	if len(start_position) != len(order_by):
+		raise InvalidPage()
+
+	# invert order
 	if direction == constants.KEY_BACK:
 		order_by = invert_order_by(order_by)
 		qs = qs.order_by(*order_by)
 
-	filter_chain = {}
-	q = Q()
+	filter_combinations = {}
+	q = Q() # final filter
 
-	for order_key, value in zip(order_by, values):
-		direction = '__lt' if order_key.descending else '__gt'
-		filter_chain[order_key.expression.name + direction] = value
-		q |= Q(**filter_chain)
-		del filter_chain[order_key.expression.name + direction]
-		filter_chain[order_key.expression.name] = value
+	# create chain of rule rule for example for name="x" parent=1, id=2 will be following:
+	# name > 'x' OR name = 'x' AND parent > 1 OR name = 'x' AND parent = 1 AND id >= 2
+	for i, value in enumerate(zip(order_by, start_position)):
+		# unpack values
+		order_key, value = value
+		# smaller or greater
+		direction = 'lt' if order_key.descending else 'gt'
+		if i == len(order_by) - 1: # change > to >= and < to <= on last iteration
+			direction = f'{direction}e'
 
-	if filter_chain:
-		q |= Q(**filter_chain)
+		# construct field lookup
+		field_name = order_key.expression.name
+		field_lookup = f'{field_name}__{direction}'
 
+		# set lookup to current combination
+		filter_combinations[field_lookup] = value
+
+		# apply combination
+		q |= Q(**filter_combinations)
+
+		# transform >, < to equals
+		del filter_combinations[field_lookup]
+		filter_combinations[field_name] = value
+
+	# apply filter
 	if q:
-		qs = qs.filter(q)
+		try:
+			qs = qs.filter(q)
+		except Exception:
+			raise InvalidPage()
 
 	return qs

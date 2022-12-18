@@ -11,7 +11,7 @@ class Book(models.Model):
 	rating = models.FloatField(blank=True, null=True)
 
 	def __str__(self):
-		return f'{self.name} ({self.pages} pages), published: {self.is_published}, rating: {self.rating}'
+		return f'{self.name} ({self.pages} pages), published: {self.is_published} ({self.pub_time.isoformat()}), rating: {self.rating}'
 
 
 class Review(models.Model):
