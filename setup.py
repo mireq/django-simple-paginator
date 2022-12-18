@@ -19,7 +19,7 @@ setup(
 	version='0.2',
 	packages=get_packages('django_simple_paginator'),
 	include_package_data=True,
-	license='BSD License',
+	license='MIT',
 	description='Simple pagination for django',
 	long_description=README,
 	url='https://github.com/mireq/django-simple-paginator',
