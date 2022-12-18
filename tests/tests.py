@@ -384,4 +384,6 @@ class TestTemplates(TestCase):
 		self.assertContains(response, '/page/3/')
 
 	def test_cursor_pagination(self):
-		pass
+		url = reverse('cursor_page', kwargs={'page': 1})
+		response = self.client.get(url)
+		self.assertNotContains(response, '/page/3/')
