@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
-from copy import deepcopy
 import logging
+from copy import deepcopy
 
 from django.core.paginator import InvalidPage, Paginator
 from django.core.serializers.json import DjangoJSONEncoder

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.views.generic import ListView
+from django_simple_paginator.cursor import CursorPaginateMixin
 
 from .models import Book
 
@@ -17,3 +18,7 @@ class BookList(ListView):
 
 	def get_context_data(self, **kwargs):
 		return super().get_context_data(extra={}, **kwargs)
+
+
+class CursorBookList(CursorPaginateMixin, BookList):
+	pass

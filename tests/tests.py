@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from .models import Book, BookOrdered, Review
 from django_simple_paginator import constants
-from django_simple_paginator.converter import PageConverter
+from django_simple_paginator.converter import PageConverter, CursorPageConverter
 from django_simple_paginator.cursor import paginate_cursor_queryset, CursorPaginateMixin
 from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, get_order_by, invert_order_by, convert_to_order_by, convert_order_by_to_expressions, filter_by_order_key
 
@@ -39,6 +39,20 @@ class TestPageConverter(TestCase):
 		self.assertEqual('/page/', reverse('page', kwargs={'page': '1'}))
 		self.assertEqual('/page/2/', reverse('page', kwargs={'page': 2}))
 		self.assertEqual('/page/2/', reverse('page', kwargs={'page': '2'}))
+
+	def test_cursor_to_pyton(self):
+		converter = CursorPageConverter()
+		self.assertEqual(1, converter.to_python('')) # empty
+		self.assertEqual('abc', converter.to_python('abc'))
+
+	def test_cursor_to_url(self):
+		converter = CursorPageConverter()
+		self.assertEqual('', converter.to_url('')) # empty
+		self.assertEqual('', converter.to_url(1)) # first page ommited
+		self.assertEqual('abc/', converter.to_url('abc'))
+
+	def test_cursor_urlconf(self):
+		self.assertEqual('/cursor/abc/', reverse('cursor_page', kwargs={'page': 'abc'}))
 
 
 class TestUtils(TestCase):
@@ -368,3 +382,6 @@ class TestTemplates(TestCase):
 		response = self.client.get(f'{url}?engine=jinja')
 		self.assertEqual(['example.jinja'], response.template_name)
 		self.assertContains(response, '/page/3/')
+
+	def test_cursor_pagination(self):
+		pass
