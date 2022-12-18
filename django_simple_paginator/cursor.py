@@ -122,3 +122,15 @@ class CursorPaginator(Paginator):
 
 	def get_order_key(self, obj):
 		return utils.get_order_key(obj, self.order_by)
+
+
+def paginate_cursor_queryset(queryset, page_number, page_size):
+	"""
+	Shortcut to paginate cursor queryset
+	"""
+	try:
+		paginator = CursorPaginator(queryset, page_size)
+		page = paginator.page(page_number)
+		return (paginator, page, page.object_list, page.has_other_pages())
+	except InvalidPage:
+		raise Http404(_('Invalid page link'))
