@@ -141,6 +141,14 @@ def filter_by_order_key(qs, direction, start_position):
 		field_name = order_expression.expression.name
 
 		field_lookup = ''
+
+		# Value  Order (NULL)  First condition    Next condition
+		# ------------------------------------------------------
+		# Val    Last          >< Val | NULL      =Val
+		# Val    First         >< Val             =Val
+		# NULL   Last          SKIP               =NULL
+		# NULL   First         NOT NULL           =NULL
+
 		if value is None: # special NULL handling
 			if order_expression.nulls_last:
 				field_lookup = f'{field_name}__isnull'
@@ -164,7 +172,10 @@ def filter_by_order_key(qs, direction, start_position):
 
 			# set lookup to current combination
 			if order_expression.nulls_last:
-				filter_combination = Q(**filter_combinations) & (Q(**{field_lookup: value}) | Q(**{f'{field_name}__isnull': True}))
+				filter_combination = (
+					Q(**filter_combinations) &
+					(Q(**{field_lookup: value}) | Q(**{f'{field_name}__isnull': True}))
+				)
 				q |= filter_combination
 				filter_combinations[field_name] = value
 				continue
