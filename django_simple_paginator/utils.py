@@ -53,25 +53,38 @@ def get_order_key(obj, order_by):
 
 
 def url_decode_order_key(order_key):
+	"""
+	Encode list of order keys to URL string
+	"""
 	return tuple(json.loads(urlsafe_base64_decode(order_key).decode('utf-8')))
 
 
 def url_encode_order_key(value):
+	"""
+	Decode list of order keys from URL string
+	"""
 	# prevent microsecond clipping
 	value = [v.isoformat() if isinstance(v, datetime.datetime) else v for v in value]
 	return urlsafe_base64_encode(json.dumps(value, cls=DjangoJSONEncoder).encode('utf-8'))
 
 
 def invert_order_by(order_by):
+	"""
+	Invert list of OrderBy expressions
+	"""
 	order_by = deepcopy(order_by)
 	for field in order_by:
+		# invert ASC/DESC
 		field.descending = not field.descending
+
+		# invert nulls first / last (only one can be active)
 		if field.nulls_first:
-			field.nulls_first = False
+			field.nulls_first = None
 			field.nulls_last = True
 		elif field.nulls_last:
-			field.nulls_last = False
+			field.nulls_last = None
 			field.nulls_first = True
+
 	return order_by
 
 

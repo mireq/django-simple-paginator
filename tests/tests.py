@@ -8,7 +8,7 @@ from datetime import datetime
 
 from .models import Book, Review
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key
+from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, invert_order_by
 
 
 class TestPageConverter(TestCase):
@@ -90,15 +90,41 @@ class TestUtils(TestCase):
 		)
 
 	def test_encode_order_key(self):
+		# empty
 		order_key = ()
 		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+
+		# single value
 		order_key = (1,)
 		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+
+		# None
 		order_key = (None,)
 		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+
+		# different values
 		order_key = (1, "text")
 		self.assertEqual(order_key, url_decode_order_key(url_encode_order_key(order_key)))
+
+		# datetime
 		order_key = (timezone.now(),)
 		processed_order_key = url_decode_order_key(url_encode_order_key(order_key))
 		processed_order_key = (datetime.fromisoformat(processed_order_key[0]),)
 		self.assertEqual(order_key, processed_order_key)
+
+	def test_invert_order_by(self):
+		order_by = [F('name').asc()]
+		inverted = [F('name').desc()]
+		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+		order_by = [F('name').desc()]
+		inverted = [F('name').asc()]
+		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+		order_by = [F('name').asc(nulls_first=True)]
+		inverted = [F('name').desc(nulls_last=True)]
+		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+		order_by = [F('name').asc(nulls_last=True)]
+		inverted = [F('name').desc(nulls_first=True)]
+		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+
+	def assertOrderByEqual(self, a, b):
+		self.assertTrue(a.descending == b.descending and bool(a.nulls_first) == bool(b.nulls_first) and bool(a.nulls_last) == bool(b.nulls_last))
