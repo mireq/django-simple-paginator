@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from django.core.paginator import InvalidPage, Paginator
 from django.db.models import Q
+from django.db.models.constants import LOOKUP_SEP
 from django.http import Http404
 from django.utils.duration import duration_iso_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -30,14 +31,17 @@ def paginate_queryset(queryset, page, page_size):
 		raise Http404(_('Invalid page (%(page_number)s): %(message)s') % {'page_number': page_number, 'message': str(e)})
 
 
-def get_model_field_by_path(obj, path):
-	for lookup in path.split('__'):
+def get_model_attribute(obj, attribute):
+	"""
+	Get model attribute by traversing attributes by django path like review__book
+	"""
+	for lookup in attribute.split(LOOKUP_SEP):
 		obj = getattr(obj, lookup)
 	return obj
 
 
 def get_order_key(obj, order_by):
-	return tuple(get_model_field_by_path(obj, expr.expression.name) for expr in order_by)
+	return tuple(get_model_attribute(obj, expr.expression.name) for expr in order_by)
 
 
 def prepare_value(val):

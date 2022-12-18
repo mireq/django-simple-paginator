@@ -3,9 +3,9 @@ from django.http import Http404
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Book
+from .models import Book, Review
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.utils import paginate_queryset
+from django_simple_paginator.utils import paginate_queryset, get_model_attribute
 
 
 class TestPageConverter(TestCase):
@@ -50,3 +50,10 @@ class TestUtils(TestCase):
 		self.assertEqual(3, page.end_index())
 		self.assertEqual(books[2:], list(object_list))
 		self.assertTrue(has_others)
+
+	def test_get_model_attribute(self):
+		book = Book.objects.create(name="book")
+		review = Review.objects.create(book=book, text="review")
+
+		self.assertEqual("review", get_model_attribute(review, "text"))
+		self.assertEqual("book", get_model_attribute(review, "book__name"))
