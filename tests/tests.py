@@ -345,3 +345,26 @@ class TestCursorPaginator(TestCase):
 	def assertBookPage(self, ids, qs):
 		returned_pages = [obj.pk for obj in qs]
 		self.assertEqual(ids, returned_pages)
+
+
+class TestTemplates(TestCase):
+	@classmethod
+	def setUpTestData(cls):
+		book_list = [
+			Book(id=1, name="1"),
+			Book(id=2, name="2"),
+			Book(id=3, name="3"),
+			Book(id=4, name="4"),
+			Book(id=5, name="5"),
+		]
+		Book.objects.bulk_create(book_list)
+
+	def test_simple_pagination(self):
+		url = reverse('page', kwargs={'page': 1})
+		response = self.client.get(url)
+		self.assertContains(response, '/page/3/')
+
+	def test_using_get(self):
+		url = reverse('using_get')
+		response = self.client.get(url)
+		self.assertContains(response, '/using-get/?page=3')
