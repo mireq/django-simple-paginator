@@ -193,7 +193,6 @@ def filter_by_order_key(qs, direction, start_position):
 	# apply filter
 	if q:
 		try:
-			print(q)
 			qs = qs.filter(q)
 		except Exception:
 			raise InvalidPage()

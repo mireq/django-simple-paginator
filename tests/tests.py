@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
+
+from django.core.paginator import InvalidPage
 from django.db.models import F
 from django.http import Http404
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from datetime import datetime
-from pprint import pprint
-from django.core.paginator import InvalidPage
 
 from .models import Book, Review
 from django_simple_paginator import constants
@@ -161,6 +161,7 @@ class TestUtils(TestCase):
 			Book(id=5, pub_time='1970-01-05T00:00:00', name="B"),
 		]
 		Book.objects.bulk_create(book_list)
+		book_list = {b.pk: b for b in Book.objects.all()}
 
 		def get_books(order, values=(), backwards=False):
 			direction = constants.KEY_BACK if backwards else constants.KEY_NEXT
@@ -173,66 +174,67 @@ class TestUtils(TestCase):
 		with self.assertRaises(InvalidPage):
 			books = get_books(['pk'], ['x']) # wrong value
 
-		# empty filter
-		books = get_books([], [])
-		self.assertEqual([1, 2, 3, 4, 5], books)
-
-		# from 3 forwards
-		books = get_books(['pk'], [3])
-		self.assertEqual([3, 4, 5], books)
-
-		# from 3 backwards
-		books = get_books(['pk'], [3], backwards=True) # from 3 backwards
-		self.assertEqual([3, 2, 1], books)
-
-		# reverse
-		books = get_books(['-pk'], [3])
-		self.assertEqual([3, 2, 1], books)
-		books = get_books(['-pk'], [3], backwards=True)
-		self.assertEqual([3, 4, 5], books)
-
-		# combination
-		books = get_books(['name', 'pk'], ['B', 4])
-		self.assertEqual([4, 5], books)
-		# trick to check priority
-		books = get_books(['name', 'pk'], ['B', 1])
-		self.assertEqual([4, 5], books)
-
 		# no nulls specified
 		with self.assertLogs('django_simple_paginator.utils'):
 			get_books([F('rating').asc(), 'pk'], [None, 1])
 
-		# playing with NLLL
-		# 2 3 N1 N4 N5
-		books = get_books([F('rating').asc(nulls_last=True), 'pk'], [3.0, 2])
-		self.assertEqual([2, 1, 4, 5], books)
+		# empty filter
+		books = get_books([], [])
+		self.assertEqual([1, 2, 3, 4, 5], books)
 
-		books = get_books([F('rating').asc(nulls_last=True), 'pk'], [None, 3])
-		self.assertEqual([4, 5], books)
+		def check_filter(order_by, backwards=False):
+			books = list(Book.objects.order_by(*order_by))
+			if backwards:
+				books.reverse()
+			ids = list(book.pk for book in books)
+			expect_ids = ids
+			next_book = ids[0]
+			debug_books = '\n'.join(str(book) for book in books)
 
-		books = get_books([F('rating').asc(nulls_first=True), 'pk'], [2.0, 1])
-		self.assertEqual([3, 2], books)
+			while True:
+				book = book_list[next_book]
+				order_key = get_order_key(book, order_by)
+				ids = get_books(order_by, order_key, backwards=backwards)
+				self.assertEqual(expect_ids, ids, msg=f'Wrong rows returned, requested order: {order_by}, order_key: {order_key}, books:\n{debug_books}')
+				expect_ids = ids[1:]
+				if len(ids) < 2:
+					break
+				next_book = ids[1]
 
-		books = get_books([F('rating').asc(nulls_first=True), 'pk'], [None, 5])
-		self.assertEqual([5, 3, 2], books)
+		def check_filters(order_by):
+			check_filter(order_by)
+			check_filter(order_by, backwards=True)
 
-		books = get_books([F('rating').asc(nulls_first=True), 'pk'], [None, 4])
-		self.assertEqual([4, 5, 3, 2], books)
+		check_filters(['pk'])
+		check_filters(['-pk'])
+		check_filters(['pub_time'])
+		check_filters(['-pub_time'])
+		check_filters(['name', 'pk'])
+		check_filters(['name', '-pk'])
+		check_filters(['-name', 'pk'])
+		check_filters(['name', F('rating').asc(nulls_last=True), 'pk'])
+		check_filters(['name', F('rating').asc(nulls_first=True), 'pk'])
+		check_filters(['name', F('rating').desc(nulls_last=True), 'pk'])
+		check_filters(['name', F('rating').desc(nulls_first=True), 'pk'])
+		check_filters([F('rating').asc(nulls_last=True), 'pk'])
+		check_filters([F('rating').asc(nulls_first=True), 'pk'])
 
 		Book.objects.all().delete()
 		book_list = [
 			Book(id=1, pub_time='1970-01-01T00:00:00', name="A"),
-			Book(id=2, pub_time='1970-01-02T00:00:00', name="A"),
-			Book(id=3, pub_time='1970-01-03T00:00:00', name="A", rating=3.0),
+			Book(id=2, pub_time='1970-01-02T00:00:00', name="A", is_published=False),
+			Book(id=3, pub_time='1970-01-03T00:00:00', name="A", is_published=False, rating=3.0),
 			Book(id=4, pub_time='1970-01-04T00:00:00', name="B", rating=2.0),
 			Book(id=5, pub_time='1970-01-05T00:00:00', name="B"),
 		]
 		Book.objects.bulk_create(book_list)
+		book_list = {b.pk: b for b in Book.objects.all()}
 
-		# A3 AN1 AN2 B5 BN4
-		books = get_books(['name', F('rating').asc(nulls_last=True), 'pk'], ['A', 3.0, 3])
-		self.assertEqual([3, 1, 2, 4, 5], books)
-		books = get_books(['name', F('rating').asc(nulls_last=True), 'pk'], ['A', None, 1])
-		self.assertEqual([1, 2, 4, 5], books)
-		books = get_books(['name', F('rating').asc(nulls_last=True), 'pk'], ['B', 2.0, 4])
-		self.assertEqual([4, 5], books)
+		check_filters(['is_published', 'pk'])
+		check_filters(['is_published', '-pk'])
+		check_filters(['name', F('rating').asc(nulls_last=True), 'pk'])
+		check_filters(['name', F('rating').asc(nulls_first=True), 'pk'])
+		check_filters(['name', F('rating').desc(nulls_last=True), 'pk'])
+		check_filters(['name', F('rating').desc(nulls_first=True), 'pk'])
+		check_filters([F('rating').asc(nulls_last=True), 'pk'])
+		check_filters([F('rating').asc(nulls_first=True), 'pk'])
