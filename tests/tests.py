@@ -2,10 +2,11 @@
 from django.http import Http404
 from django.test import TestCase
 from django.urls import reverse
+from django.db.models import F
 
 from .models import Book, Review
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.utils import paginate_queryset, get_model_attribute
+from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key
 
 
 class TestPageConverter(TestCase):
@@ -57,3 +58,31 @@ class TestUtils(TestCase):
 
 		self.assertEqual("review", get_model_attribute(review, "text"))
 		self.assertEqual("book", get_model_attribute(review, "book__name"))
+
+	def test_get_order_key(self):
+		book = Book.objects.create(name="book")
+		review = Review.objects.create(book=book, text="review")
+
+		# simple case
+		self.assertEqual(
+			(book.pk,),
+			get_order_key(book, ['pk'])
+		)
+
+		# negative are supported too
+		self.assertEqual(
+			(book.pk,),
+			get_order_key(book, ['-pk'])
+		)
+
+		# f expression
+		self.assertEqual(
+			(book.pk,),
+			get_order_key(book, [F('pk').desc()])
+		)
+
+		# multiple values
+		self.assertEqual(
+			(review.pk, review.book_id, review.book.name),
+			get_order_key(review, ['pk', 'book_id', 'book__name'])
+		)

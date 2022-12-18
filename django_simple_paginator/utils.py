@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from django.core.paginator import InvalidPage, Paginator
 from django.db.models import Q
+from django.db.models.expressions import OrderBy
 from django.db.models.constants import LOOKUP_SEP
 from django.http import Http404
 from django.utils.duration import duration_iso_string
@@ -41,7 +42,14 @@ def get_model_attribute(obj, attribute):
 
 
 def get_order_key(obj, order_by):
-	return tuple(get_model_attribute(obj, expr.expression.name) for expr in order_by)
+	"""
+	Get list of attributes for order key, e.g. if order_key is ['pk'], it will
+	return [obj.pk]
+	"""
+	return tuple(
+		get_model_attribute(obj, f.expression.name if isinstance(f, OrderBy) else f.lstrip('-'))
+		for f in order_by
+	)
 
 
 def prepare_value(val):
