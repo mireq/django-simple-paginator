@@ -11,6 +11,7 @@ from django.utils import timezone
 from .models import Book, BookOrdered, Review
 from django_simple_paginator import constants
 from django_simple_paginator.converter import PageConverter
+from django_simple_paginator.cursor import paginate_cursor_queryset
 from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, get_order_by, invert_order_by, convert_to_order_by, convert_order_by_to_expressions, filter_by_order_key
 
 
@@ -247,3 +248,87 @@ class TestUtils(TestCase):
 		check_filters(['name', F('rating').desc(nulls_first=True), 'pk'])
 		check_filters([F('rating').asc(nulls_last=True), 'pk'])
 		check_filters([F('rating').asc(nulls_first=True), 'pk'])
+
+
+class TestCursorPaginator(TestCase):
+	@classmethod
+	def setUpTestData(cls):
+		book_list = [
+			Book(id=1, name="1"),
+			Book(id=2, name="2"),
+			Book(id=3, name="3"),
+			Book(id=4, name="4"),
+			Book(id=5, name="5"),
+		]
+		Book.objects.bulk_create(book_list)
+
+	def test_invalid_page(self):
+		qs = Book.objects.order_by('pk')
+		with self.assertRaises(Http404):
+			__ = paginate_cursor_queryset(qs, 'invalid', 2)
+		with self.assertRaises(Http404):
+			__ = paginate_cursor_queryset(qs, constants.KEY_BACK + 'invalid', 2)
+
+	def test_first_page(self):
+		qs = Book.objects.order_by('pk')
+		__, __, qs, __ = paginate_cursor_queryset(qs, None, 2)
+		self.assertBookPage([1, 2], qs)
+
+	def test_empty(self):
+		books = Book.objects.order_by('pk').none()
+		__, page, qs, __ = paginate_cursor_queryset(books, None, 2)
+		self.assertFalse(page.has_previous())
+		self.assertFalse(page.has_next())
+		self.assertBookPage([], qs)
+
+	def test_paginate(self):
+		books = Book.objects.order_by('pk')
+		paginator, page, qs, __ = paginate_cursor_queryset(books, None, 2)
+		# not needed
+		self.assertEqual(0, paginator.count)
+		self.assertEqual(0, paginator.num_pages)
+		self.assertFalse(page.has_previous())
+		self.assertTrue(page.has_next())
+
+		# second page
+		number = page.next_page_number()
+
+		__, page, qs, __ = paginate_cursor_queryset(books, number, 2)
+		self.assertTrue(page.has_previous())
+		self.assertTrue(page.has_next())
+		self.assertBookPage([3, 4], qs)
+
+		# last page
+		number = page.next_page_number()
+
+		__, page, qs, __ = paginate_cursor_queryset(books, number, 2)
+		self.assertTrue(page.has_previous())
+		self.assertFalse(page.has_next())
+		self.assertBookPage([5], qs)
+
+		# again second page
+		number = page.previous_page_number()
+
+		__, page, qs, __ = paginate_cursor_queryset(books, number, 2)
+		self.assertTrue(page.has_previous())
+		self.assertTrue(page.has_next())
+		self.assertBookPage([3, 4], qs)
+
+		# again first page
+		number = page.previous_page_number()
+
+		__, page, qs, __ = paginate_cursor_queryset(books, number, 2)
+		self.assertFalse(page.has_previous())
+		self.assertTrue(page.has_next())
+		self.assertBookPage([1, 2], qs)
+
+		# check missing key
+		Book.objects.filter(pk=3).delete()
+
+		books = Book.objects.order_by('pk')
+		__, page, qs, __ = paginate_cursor_queryset(books, number, 2)
+		self.assertBookPage([1, 2], qs)
+
+	def assertBookPage(self, ids, qs):
+		returned_pages = [obj.pk for obj in qs]
+		self.assertEqual(ids, returned_pages)

@@ -42,37 +42,39 @@ class IteratorWrapper(object):
 		self.iterator = iterator_class(*args, **kwargs)
 		self.paginator = paginator
 		self.page = page
-		self._result_cache = None
+
+	@cached_property
+	def _result_cache(self):
+		cache = list(self.iterator)
+		start_key = self.paginator.get_start_order_key(self.page.number)
+
+		if start_key is not None:
+			# first item handling (used to check previous page existence)
+			if cache and self.paginator.get_order_key(cache[0]) == start_key.values:
+				if start_key.direction == constants.KEY_BACK:
+					self.page.next_page_item = cache.pop(0)
+				else:
+					self.page.prev_page_item = cache.pop(0)
+
+		# last item handling (used to check previous page existence)
+		if len(cache) > self.paginator.per_page:
+			if start_key is not None and start_key.direction == constants.KEY_BACK:
+				self.page.prev_page_item = cache.pop()
+			else:
+				self.page.next_page_item = cache.pop()
+
+		# revert backwards iterated queryset
+		if start_key is not None and start_key.direction == constants.KEY_BACK:
+			cache = cache[::-1]
+
+		# set first and last items of page
+		if cache:
+			self.page.first_item = cache[0]
+			self.page.last_item = cache[-1]
+
+		return cache
 
 	def __iter__(self):
-		if self._result_cache is None:
-			self._result_cache = list(self.iterator)
-			start_key = self.paginator.get_start_order_key(self.page.number)
-
-			if start_key is not None:
-				# first item handling (used to check previous page existence)
-				if self._result_cache and self.paginator.get_order_key(self._result_cache[0]) == start_key.values:
-					if start_key.direction == constants.KEY_BACK:
-						self.page.next_page_item = self._result_cache.pop(0)
-					else:
-						self.page.prev_page_item = self._result_cache.pop(0)
-
-			# last item handling (used to check previous page existence)
-			if len(self._result_cache) > self.paginator.per_page:
-				if start_key is not None and start_key.direction == constants.KEY_BACK:
-					self.page.prev_page_item = self._result_cache.pop()
-				else:
-					self.page.next_page_item = self._result_cache.pop()
-
-			# revert backwards iterated queryset
-			if start_key is not None and start_key.direction == constants.KEY_BACK:
-				self._result_cache = self._result_cache[::-1]
-
-			# set first and last items of page
-			if self._result_cache:
-				self.page.first_item = self._result_cache[0]
-				self.page.last_item = self._result_cache[-1]
-
 		return iter(self._result_cache)
 
 
@@ -98,7 +100,7 @@ class CursorPaginator(Paginator):
 	def page(self, number):
 		order_key_filter = self.validate_number(number)
 		page = CursorPage(None, order_key_filter, self)
-		count = self.per_page + (2 if order_key_filter else 1) # backward and forward item after begin or single on first page
+		count = self.per_page + (2 if order_key_filter else 1) # load one more item before and after list
 		qs = self.object_list
 		if order_key_filter:
 			qs = utils.filter_by_order_key(qs, order_key_filter.direction, order_key_filter.values)
@@ -106,7 +108,10 @@ class CursorPaginator(Paginator):
 		qs._iterable_class = partial(IteratorWrapper, qs._iterable_class, self, page)
 		page.object_list = qs
 		# force initialization
-		next(iter(qs))
+		try:
+			next(iter(qs))
+		except StopIteration:
+			pass
 		return page
 
 	@cached_property
