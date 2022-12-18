@@ -203,7 +203,7 @@ class TestUtils(TestCase):
 			get_books([F('rating').asc(), 'pk'], [None, 1])
 
 		# playing with NLLL
-		# N1 N4 N5 3 2
+		# 2 3 N1 N4 N5
 		books = get_books([F('rating').asc(nulls_last=True), 'pk'], [3.0, 2])
 		self.assertEqual([2, 1, 4, 5], books)
 

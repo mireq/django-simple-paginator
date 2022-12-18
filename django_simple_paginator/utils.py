@@ -140,11 +140,6 @@ def filter_by_order_key(qs, direction, start_position):
 		# filter by
 		field_name = order_expression.expression.name
 
-		# or combinations used to correctly select null values
-		filter_or = Q()
-		if order_expression.nulls_last and value is not None:
-			filter_or |= Q(**{f'{field_name}__isnull': True})
-
 		field_lookup = ''
 		if value is None: # special NULL handling
 			if order_expression.nulls_last:
@@ -168,12 +163,16 @@ def filter_by_order_key(qs, direction, start_position):
 			field_lookup = f'{field_name}__{direction}'
 
 			# set lookup to current combination
-			filter_combinations[field_lookup] = value
+			if order_expression.nulls_last:
+				filter_combination = Q(**filter_combinations) & (Q(**{field_lookup: value}) | Q(**{f'{field_name}__isnull': True}))
+				q |= filter_combination
+				filter_combinations[field_name] = value
+				continue
+			else:
+				filter_combinations[field_lookup] = value
 
 		# apply combination
 		filter_combination = Q(**filter_combinations)
-		if filter_or:
-			filter_combination |= filter_or
 		q |= filter_combination
 
 		# transform >, < to equals
