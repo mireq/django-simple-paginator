@@ -11,7 +11,7 @@ from django.core.paginator import InvalidPage
 from .models import Book, Review
 from django_simple_paginator import constants
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, invert_order_by, filter_by_order_key
+from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, invert_order_by, convert_to_order_by, convert_order_by_to_expressions, filter_by_order_key
 
 
 class TestPageConverter(TestCase):
@@ -131,6 +131,23 @@ class TestUtils(TestCase):
 		order_by = [F('name').asc(nulls_last=True)]
 		inverted = [F('name').desc(nulls_first=True)]
 		self.assertOrderByEqual(inverted[0], invert_order_by(order_by)[0])
+
+	def test_convert_order_by_to_expressions(self):
+		e = convert_to_order_by('pk')
+		self.assertEqual(e.expression.name, 'pk')
+		self.assertFalse(e.descending)
+
+		e = convert_to_order_by('-pk')
+		self.assertEqual(e.expression.name, 'pk')
+		self.assertTrue(e.descending)
+
+		# conversion not needed
+		e = convert_to_order_by(F('pk').asc())
+		self.assertEqual(e.expression.name, 'pk')
+
+		e = convert_order_by_to_expressions(['pk'])
+		self.assertEqual(e[0].expression.name, 'pk')
+		self.assertFalse(e[0].descending)
 
 	def assertOrderByEqual(self, a, b):
 		self.assertTrue(a.descending == b.descending and bool(a.nulls_first) == bool(b.nulls_first) and bool(a.nulls_last) == bool(b.nulls_last))

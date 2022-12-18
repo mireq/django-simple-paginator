@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from django.core.paginator import InvalidPage, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import Q
+from django.db.models import Q, F
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import OrderBy
 from django.http import Http404
@@ -86,6 +86,22 @@ def invert_order_by(order_by):
 			field.nulls_first = True
 
 	return order_by
+
+
+def convert_to_order_by(field):
+	"""
+	Converts field name to OrderBy expression
+	"""
+	if isinstance(field, OrderBy):
+		return field
+	return F(field[1:]).desc() if field[:1] == '-' else F(field).asc()
+
+
+def convert_order_by_to_expressions(order_by):
+	"""
+	Converts list of order_by keys like ['pk'] to list of OrderBy objects
+	"""
+	return [convert_to_order_by(field) for field in order_by]
 
 
 def filter_by_order_key(qs, direction, start_position, order_by):
