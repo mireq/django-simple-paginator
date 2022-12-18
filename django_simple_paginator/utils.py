@@ -72,6 +72,14 @@ def url_encode_order_key(value):
 	return urlsafe_base64_encode(json.dumps(value, cls=DjangoJSONEncoder).encode('utf-8'))
 
 
+def get_order_by(qs):
+	"""
+	Returns order_by from queryset
+	"""
+	query = qs.query
+	return query.order_by or query.get_meta().ordering
+
+
 def invert_order_by(order_by):
 	"""
 	Invert list of OrderBy expressions

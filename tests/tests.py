@@ -11,7 +11,7 @@ from django.utils import timezone
 from .models import Book, Review
 from django_simple_paginator import constants
 from django_simple_paginator.converter import PageConverter
-from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, invert_order_by, convert_to_order_by, convert_order_by_to_expressions, filter_by_order_key
+from django_simple_paginator.utils import paginate_queryset, get_model_attribute, get_order_key, url_encode_order_key, url_decode_order_key, get_order_by, invert_order_by, convert_to_order_by, convert_order_by_to_expressions, filter_by_order_key
 
 
 class TestPageConverter(TestCase):
@@ -91,6 +91,15 @@ class TestUtils(TestCase):
 			(review.pk, review.book_id, review.book.name),
 			get_order_key(review, ['pk', 'book_id', 'book__name'])
 		)
+
+	def test_get_order_by(self):
+		# simple case
+		qs = Book.objects.order_by('name', 'pk')
+		self.assertEqual(('name', 'pk'), get_order_by(qs))
+
+		# default ordering
+		qs = Book.objects.all()
+		self.assertEqual(('pk',), get_order_by(qs))
 
 	def test_encode_order_key(self):
 		# empty

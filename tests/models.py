@@ -12,6 +12,9 @@ class Book(models.Model):
 	def __str__(self):
 		return f'#{self.pk} {self.name}, published: {self.is_published} ({self.pub_time.isoformat()}), rating: {self.rating}'
 
+	class Meta:
+		ordering = ('pk',)
+
 
 class Review(models.Model):
 	book = models.ForeignKey(Book, on_delete=models.CASCADE)
@@ -19,3 +22,6 @@ class Review(models.Model):
 
 	def __str__(self):
 		return f'#{self.pk} {self.book_id} {self.text}'
+
+	class Meta:
+		ordering = ('pk',)
