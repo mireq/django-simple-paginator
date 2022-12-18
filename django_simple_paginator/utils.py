@@ -104,10 +104,13 @@ def convert_order_by_to_expressions(order_by):
 	return [convert_to_order_by(field) for field in order_by]
 
 
-def filter_by_order_key(qs, direction, start_position, order_by):
+def filter_by_order_key(qs, direction, start_position):
 	"""
 	Filter queryset from specific position inncluding start position
 	"""
+
+	# change list of strings or expressions to list of expressions
+	order_by = convert_order_by_to_expressions(qs.query.order_by)
 
 	# check if we have required start_position
 	if len(start_position) != len(order_by):

@@ -166,28 +166,35 @@ class TestUtils(TestCase):
 		def get_books(order, values=(), backwards=False):
 			direction = constants.KEY_BACK if backwards else constants.KEY_NEXT
 			books = Book.objects.order_by(*order).values_list('pk', flat=True)
-			return list(filter_by_order_key(books, direction, values, books.query.order_by))
+			return list(filter_by_order_key(books, direction, values))
 
 		with self.assertRaises(InvalidPage):
-			books = get_books([F("pk").asc()], []) # missing parameter
+			books = get_books(['pk'], []) # missing parameter
 
 		with self.assertRaises(InvalidPage):
-			books = get_books([F("pk").asc()], ['x']) # wrong value
+			books = get_books(['pk'], ['x']) # wrong value
 
 		# empty filter
 		books = get_books([], [])
 		self.assertEqual([1, 2, 3, 4, 5], books)
 
 		# from 3 forwards
-		books = get_books([F("pk").asc()], [3])
+		books = get_books(['pk'], [3])
 		self.assertEqual([3, 4, 5], books)
 
 		# from 3 backwards
-		books = get_books([F("pk").asc()], [3], backwards=True) # from 3 backwards
+		books = get_books(['pk'], [3], backwards=True) # from 3 backwards
 		self.assertEqual([3, 2, 1], books)
 
 		# reverse
-		books = get_books([F("pk").desc()], [3])
+		books = get_books(['-pk'], [3])
 		self.assertEqual([3, 2, 1], books)
-		books = get_books([F("pk").desc()], [3], backwards=True)
+		books = get_books(['-pk'], [3], backwards=True)
 		self.assertEqual([3, 4, 5], books)
+
+		# combination
+		books = get_books(['name', 'pk'], ['B', 4])
+		self.assertEqual([4, 5], books)
+		# trick to check priority
+		books = get_books(['name', 'pk'], ['B', 1])
+		self.assertEqual([4, 5], books)
