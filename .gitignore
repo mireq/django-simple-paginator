@@ -1,2 +1,12 @@
 sample_project/db.sqlite3
 /django_simple_paginator.egg-info
+.envrc
+*~
+*.pyc
+.ropeproject
+.coverage
+.tox
+build
+/dist
+/htmlcov
+/coverage.xml
