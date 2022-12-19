@@ -2,6 +2,12 @@
 Simple pagination for django
 ============================
 
+Project has been renamed to `django-universal-paginator <https://github.com/mireq/django-universal-paginator>`_
+
+New project has pypi package and supports cursor navigation. Usage is exact
+same except of renamed settings to match get_elided_page_range of builtin
+Django paginator arguments.
+
 Install
 -------
 
